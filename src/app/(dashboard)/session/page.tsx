@@ -14,16 +14,9 @@ import { useTimer } from '@/lib/hooks/useTimer';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { SESSION_TYPES, type SessionTypeName } from '@/types/database';
 
-// Default categories - will be replaced with API call
-const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'default-1', name: 'PhD', color: '#4F46E5', isDefault: true },
-  { id: 'default-2', name: 'Math', color: '#059669', isDefault: true },
-  { id: 'default-3', name: 'Programming', color: '#EA580C', isDefault: true },
-  { id: 'default-4', name: 'Outschool Content', color: '#7C3AED', isDefault: true },
-];
-
 export default function SessionPage() {
-  const [categories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<SessionTypeName | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -38,6 +31,24 @@ export default function SessionPage() {
   const timer = useTimer({
     onComplete: handleTimerComplete,
   });
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch('/api/categories', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setCategories(data.categories || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   // Restore session on mount if one exists
   useEffect(() => {
@@ -205,12 +216,25 @@ export default function SessionPage() {
             </Card>
 
             <Card variant="default" padding="lg">
-              <CategorySelector
-                categories={categories}
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-                disabled={isSessionActive}
-              />
+              {isLoadingCategories ? (
+                <div className="text-center py-4">
+                  <p className="text-neutral-400">Loading categories...</p>
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-4">
+                  <p className="text-neutral-400 mb-2">No categories found</p>
+                  <a href="/categories" className="text-poker-gold hover:underline">
+                    Create a category first
+                  </a>
+                </div>
+              ) : (
+                <CategorySelector
+                  categories={categories}
+                  value={selectedCategory}
+                  onChange={setSelectedCategory}
+                  disabled={isSessionActive}
+                />
+              )}
             </Card>
           </>
         )}
