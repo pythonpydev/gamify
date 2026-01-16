@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { createClient } from '@/lib/supabase/server';
+import { syncUserToDatabase } from '@/lib/utils/syncUser';
 import type { CreateSessionRequest } from '@/types/api';
+
+// Helper to get or create user in database
+async function getOrCreateUser(authUser: { id: string; email?: string }) {
+  let user = await prisma.user.findUnique({
+    where: { authId: authUser.id },
+  });
+
+  if (!user) {
+    // Sync user from Supabase Auth
+    user = await syncUserToDatabase(authUser as Parameters<typeof syncUserToDatabase>[0]);
+  }
+
+  return user;
+}
 
 // GET /api/sessions - List user's sessions
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const {
-      data: { user },
+      data: { user: authUser },
     } = await supabase.auth.getUser();
 
-    if (!user) {
+    if (!authUser) {
       return NextResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
     }
+
+    const user = await getOrCreateUser(authUser);
 
     const { searchParams } = new URL(request.url);
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
@@ -21,7 +38,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status');
 
     const where = {
-      user: { authId: user.id },
+      userId: user.id,
       ...(status && { status: status as 'ACTIVE' | 'COMPLETED' | 'ABANDONED' }),
     };
 
@@ -69,17 +86,8 @@ export async function POST(request: NextRequest) {
     const body: CreateSessionRequest = await request.json();
     const { categoryId, sessionType } = body;
 
-    // Get the user from our database
-    const user = await prisma.user.findUnique({
-      where: { authId: authUser.id },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: { message: 'User not found' } },
-        { status: 404 }
-      );
-    }
+    // Get or create the user in our database
+    const user = await getOrCreateUser(authUser);
 
     // Check for existing active session
     const activeSession = await prisma.studySession.findFirst({

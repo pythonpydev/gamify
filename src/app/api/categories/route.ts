@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/db/prisma';
+import { syncUserToDatabase } from '@/lib/utils/syncUser';
 
 /**
  * GET /api/categories
@@ -19,16 +20,23 @@ export async function GET() {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { authId: authUser.id },
       select: { id: true },
     });
 
+    // If user doesn't exist in database, sync them from Supabase Auth
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      try {
+        const syncedUser = await syncUserToDatabase(authUser);
+        user = { id: syncedUser.id };
+      } catch (syncError) {
+        console.error('Failed to sync user to database:', syncError);
+        return NextResponse.json(
+          { error: 'Failed to create user in database' },
+          { status: 500 }
+        );
+      }
     }
 
     // Get categories with session count
