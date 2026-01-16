@@ -148,8 +148,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(session, { status: 201 });
   } catch (error) {
     console.error('Error creating session:', error);
+    const message = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { error: { message: 'Internal server error' } },
+      { error: { message, details: String(error) } },
       { status: 500 }
     );
   }
