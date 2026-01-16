@@ -134,33 +134,7 @@ export default function DashboardPage() {
   const remainingMinutes = stats ? stats.totalMinutes % 60 : 0;
 
   return (
-    <div className="min-h-screen bg-poker-felt-dark">
-      {/* Header */}
-      <header className="border-b border-neutral-800 bg-neutral-900/50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🎰</span>
-              <span className="text-xl font-bold text-white">Study Poker</span>
-            </div>
-            <nav className="flex items-center gap-6">
-              <Link href="/dashboard" className="text-poker-gold font-medium">
-                Dashboard
-              </Link>
-              <Link href="/session" className="text-neutral-300 hover:text-white transition-colors">
-                Timer
-              </Link>
-              <Link href="/history" className="text-neutral-300 hover:text-white transition-colors">
-                History
-              </Link>
-              <Link href="/categories" className="text-neutral-300 hover:text-white transition-colors">
-                Categories
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-screen">
       <main className="container mx-auto px-4 py-8">
         {/* Welcome section */}
         <div className="mb-8">
