@@ -1,0 +1,217 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { SessionCard, type SessionDisplay } from '@/components/dashboard';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { useAuthStore } from '@/lib/store/authStore';
+
+interface SessionApiResponse {
+  id: string;
+  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK';
+  durationMins: number;
+  chipsEarned: number;
+  qualityRating: number | null;
+  status: 'COMPLETED' | 'ABANDONED';
+  endTime: string | null;
+  startTime: string;
+  category?: {
+    name: string;
+    color: string;
+  };
+}
+
+interface SessionsResponse {
+  sessions: SessionApiResponse[];
+  total: number;
+  hasMore: boolean;
+}
+
+export default function HistoryPage() {
+  const { initialize } = useAuthStore();
+
+  const [sessions, setSessions] = useState<SessionDisplay[]>([]);
+  const [total, setTotal] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>('');
+
+  const limit = 10;
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  const fetchSessions = useCallback(async (newOffset: number, append: boolean = false) => {
+    try {
+      if (append) {
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+      }
+
+      const params = new URLSearchParams({
+        limit: limit.toString(),
+        offset: newOffset.toString(),
+      });
+
+      if (statusFilter) {
+        params.set('status', statusFilter);
+      }
+
+      const res = await fetch(`/api/sessions?${params}`);
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch sessions');
+      }
+
+      const data: SessionsResponse = await res.json();
+
+      const displaySessions: SessionDisplay[] = data.sessions.map((s) => ({
+        id: s.id,
+        sessionType: s.sessionType,
+        categoryName: s.category?.name || 'Unknown',
+        categoryColor: s.category?.color || '#6366f1',
+        durationMinutes: s.durationMins,
+        chipsEarned: s.chipsEarned,
+        qualityRating: s.qualityRating,
+        status: s.status,
+        completedAt: s.endTime || s.startTime,
+      }));
+
+      if (append) {
+        setSessions((prev) => [...prev, ...displaySessions]);
+      } else {
+        setSessions(displaySessions);
+      }
+
+      setTotal(data.total);
+      setHasMore(data.hasMore);
+      setOffset(newOffset);
+    } catch (err) {
+      console.error('Failed to fetch sessions:', err);
+      setError('Failed to load session history');
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchSessions(0);
+  }, [fetchSessions]);
+
+  const loadMore = () => {
+    fetchSessions(offset + limit, true);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-poker-felt-dark flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4 animate-pulse">📜</div>
+          <p className="text-neutral-400">Loading history...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-poker-felt-dark">
+      {/* Header */}
+      <header className="border-b border-neutral-800 bg-neutral-900/50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🎰</span>
+              <span className="text-xl font-bold text-white">Study Poker</span>
+            </div>
+            <nav className="flex items-center gap-6">
+              <Link href="/dashboard" className="text-neutral-300 hover:text-white transition-colors">
+                Dashboard
+              </Link>
+              <Link href="/session" className="text-neutral-300 hover:text-white transition-colors">
+                Timer
+              </Link>
+              <Link href="/history" className="text-poker-gold font-medium">
+                History
+              </Link>
+              <Link href="/categories" className="text-neutral-300 hover:text-white transition-colors">
+                Categories
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Session History</h1>
+            <p className="text-neutral-400">
+              {total} total sessions
+            </p>
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center gap-4" data-testid="session-filters">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-poker-gold"
+            >
+              <option value="">All Sessions</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="ABANDONED">Abandoned</option>
+            </select>
+          </div>
+        </div>
+
+        {error && (
+          <Card className="p-8 text-center mb-8">
+            <div className="text-4xl mb-4">❌</div>
+            <p className="text-red-400 mb-4">{error}</p>
+            <Button onClick={() => fetchSessions(0)}>
+              Try Again
+            </Button>
+          </Card>
+        )}
+
+        {sessions.length === 0 && !error ? (
+          <Card className="p-12 text-center">
+            <div className="text-5xl mb-4">🃏</div>
+            <h2 className="text-xl font-semibold text-white mb-2">No sessions yet</h2>
+            <p className="text-neutral-400 mb-6">
+              Complete your first study session to see it here!
+            </p>
+            <Link href="/session">
+              <Button variant="primary">Start a Session</Button>
+            </Link>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {sessions.map((session) => (
+              <SessionCard key={session.id} session={session} />
+            ))}
+
+            {hasMore && (
+              <div className="text-center pt-4">
+                <Button
+                  variant="secondary"
+                  onClick={loadMore}
+                  disabled={isLoadingMore}
+                >
+                  {isLoadingMore ? 'Loading...' : 'Load More'}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

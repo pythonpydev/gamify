@@ -1,0 +1,575 @@
+openapi: 3.1.0
+info:
+  title: Study Poker MVP API
+  description: |
+    API for the Study Poker gamified Pomodoro timer application.
+    
+    **Authentication**: All endpoints except `/api/auth/*` require a valid Supabase session.
+    Pass the session token in the `Authorization: Bearer <token>` header.
+  version: 1.0.0
+  contact:
+    name: Study Poker
+    
+servers:
+  - url: http://localhost:3000
+    description: Development server
+  - url: https://study-poker.vercel.app
+    description: Production server
+
+tags:
+  - name: Sessions
+    description: Study session management
+  - name: Categories
+    description: Study category management
+  - name: Users
+    description: User profile and stats
+
+paths:
+  /api/sessions:
+    get:
+      summary: List user's study sessions
+      description: Returns paginated list of user's study sessions, most recent first
+      tags: [Sessions]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/SessionStatus'
+      responses:
+        '200':
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StudySession'
+                  total:
+                    type: integer
+                  hasMore:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      summary: Start a new study session
+      description: Creates a new active study session
+      tags: [Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [categoryId, sessionType]
+              properties:
+                categoryId:
+                  type: string
+                  description: ID of the study category
+                sessionType:
+                  $ref: '#/components/schemas/SessionType'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySession'
+        '400':
+          description: Invalid request or user already has active session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/sessions/active:
+    get:
+      summary: Get current active session
+      description: Returns the user's currently active session, if any
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Active session or null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/StudySession'
+                  - type: 'null'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/sessions/{sessionId}:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    
+    get:
+      summary: Get session details
+      description: Returns details of a specific study session
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySession'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/sessions/{sessionId}/complete:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    
+    post:
+      summary: Complete a study session
+      description: |
+        Marks an active session as completed, records quality rating, and calculates chips earned.
+        
+        **Chip Calculation**:
+        - Base: `floor(durationMins / 25) * 100`
+        - Quality bonus: `qualityRating * 20`
+        - Sessions < 5 minutes earn 0 chips
+      tags: [Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [qualityRating]
+              properties:
+                qualityRating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                  description: User's self-rated quality of focus (1-5 stars)
+                notes:
+                  type: string
+                  maxLength: 500
+                  description: Optional notes about what was studied
+      responses:
+        '200':
+          description: Session completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  session:
+                    $ref: '#/components/schemas/StudySession'
+                  chipsEarned:
+                    type: integer
+                    description: Chips earned from this session
+                  totalChips:
+                    type: integer
+                    description: User's new total chip count
+                  newRank:
+                    type: string
+                    description: User's rank after this session
+        '400':
+          description: Session not active or invalid rating
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/sessions/{sessionId}/abandon:
+    parameters:
+      - name: sessionId
+        in: path
+        required: true
+        schema:
+          type: string
+    
+    post:
+      summary: Abandon a study session
+      description: Marks an active session as abandoned. No chips are earned.
+      tags: [Sessions]
+      responses:
+        '200':
+          description: Session abandoned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudySession'
+        '400':
+          description: Session not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/categories:
+    get:
+      summary: List categories
+      description: Returns all categories available to the user (defaults + custom)
+      tags: [Categories]
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      summary: Create custom category
+      description: Creates a new custom study category for the user
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, color]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                color:
+                  type: string
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+                  description: Hex color code
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Invalid request or duplicate name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/categories/{categoryId}:
+    parameters:
+      - name: categoryId
+        in: path
+        required: true
+        schema:
+          type: string
+    
+    patch:
+      summary: Update category
+      description: Updates a custom category. Cannot update default categories.
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                color:
+                  type: string
+                  pattern: '^#[0-9A-Fa-f]{6}$'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          description: Cannot modify default category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      summary: Delete category
+      description: |
+        Deletes a custom category. Cannot delete default categories.
+        Sessions using this category are preserved but will reference a null category.
+      tags: [Categories]
+      responses:
+        '204':
+          description: Category deleted
+        '400':
+          description: Cannot delete default category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/users/me:
+    get:
+      summary: Get current user profile
+      description: Returns the current user's profile and stats
+      tags: [Users]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    patch:
+      summary: Update user profile
+      description: Updates the current user's profile
+      tags: [Users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                displayName:
+                  type: string
+                  maxLength: 50
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/me/stats:
+    get:
+      summary: Get user statistics
+      description: Returns aggregated statistics for the dashboard
+      tags: [Users]
+      responses:
+        '200':
+          description: User statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSessions:
+                    type: integer
+                  completedSessions:
+                    type: integer
+                  totalMinutesStudied:
+                    type: integer
+                  averageQualityRating:
+                    type: number
+                    format: float
+                  sessionsToday:
+                    type: integer
+                  chipsEarnedToday:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    StudySession:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        categoryId:
+          type: string
+        category:
+          $ref: '#/components/schemas/Category'
+        sessionType:
+          $ref: '#/components/schemas/SessionType'
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+          nullable: true
+        durationMins:
+          type: integer
+        qualityRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+        chipsEarned:
+          type: integer
+        status:
+          $ref: '#/components/schemas/SessionStatus'
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - categoryId
+        - sessionType
+        - startTime
+        - durationMins
+        - chipsEarned
+        - status
+        - createdAt
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+          nullable: true
+        name:
+          type: string
+        color:
+          type: string
+          description: Hex color code
+        isDefault:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - color
+        - isDefault
+        - createdAt
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+          nullable: true
+        currentChips:
+          type: integer
+        totalChipsEarned:
+          type: integer
+        rank:
+          type: string
+          description: Computed rank based on totalChipsEarned
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - currentChips
+        - totalChipsEarned
+        - rank
+        - createdAt
+
+    SessionType:
+      type: string
+      enum: [QUICK_HAND, STANDARD, DEEP_STACK]
+
+    SessionStatus:
+      type: string
+      enum: [ACTIVE, COMPLETED, ABANDONED]
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        code:
+          type: string
+          description: Error code for programmatic handling
+      required:
+        - error
+
+  responses:
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Authentication required"
+            code: "UNAUTHORIZED"
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Resource not found"
+            code: "NOT_FOUND"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase session token
+
+security:
+  - bearerAuth: []
