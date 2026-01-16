@@ -15,6 +15,7 @@ const sessionTypeInfo: Record<SessionTypeName, { emoji: string; description: str
   QUICK_HAND: { emoji: '⚡', description: 'Quick focus burst' },
   STANDARD: { emoji: '🃏', description: 'Classic Pomodoro' },
   DEEP_STACK: { emoji: '🎰', description: 'Deep work session' },
+  TEST_HAND: { emoji: '🧪', description: 'Testing only' },
 };
 
 export function SessionTypeSelector({
@@ -51,7 +52,7 @@ export function SessionTypeSelector({
                 <span className={cn('font-semibold', isSelected ? 'text-felt-700' : 'text-gray-900')}>
                   {config.label}
                 </span>
-                <span className="text-sm text-gray-500">{config.duration} min</span>
+                <span className="text-sm text-gray-500">{'durationSeconds' in config ? `${config.durationSeconds} sec` : `${config.duration} min`}</span>
                 <span className="text-xs text-gray-400 mt-1">{info.description}</span>
 
                 {isSelected && (

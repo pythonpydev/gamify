@@ -69,6 +69,7 @@ enum SessionType {
   QUICK_HAND
   STANDARD
   DEEP_STACK
+  TEST_HAND
 }
 
 enum SessionStatus {

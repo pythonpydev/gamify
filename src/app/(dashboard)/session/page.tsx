@@ -64,7 +64,12 @@ export default function SessionPage() {
     const category = categories.find((c) => c.id === selectedCategory);
     if (!category) return;
 
-    const durationMins = SESSION_TYPES[selectedType].duration;
+    const sessionConfig = SESSION_TYPES[selectedType];
+    // Handle TEST_HAND which uses durationSeconds instead of duration
+    const durationSeconds = 'durationSeconds' in sessionConfig 
+      ? sessionConfig.durationSeconds 
+      : sessionConfig.duration * 60;
+    const durationMins = Math.ceil(durationSeconds / 60);
 
     // Start the session in store
     startSession({
@@ -79,7 +84,7 @@ export default function SessionPage() {
     });
 
     // Start the timer
-    timer.start(durationMins * 60);
+    timer.start(durationSeconds);
   };
 
   const handleCompleteSession = async (qualityRating: number, _notes?: string) => {
