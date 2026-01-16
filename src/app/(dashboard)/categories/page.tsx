@@ -30,7 +30,9 @@ export default function CategoriesPage() {
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch('/api/categories');
+      const res = await fetch('/api/categories', {
+        credentials: 'include',
+      });
 
       if (!res.ok) {
         throw new Error('Failed to fetch categories');
@@ -74,6 +76,7 @@ export default function CategoriesPage() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
+          credentials: 'include',
         });
 
         if (!res.ok) {
@@ -86,6 +89,7 @@ export default function CategoriesPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(data),
+          credentials: 'include',
         });
 
         if (!res.ok) {
@@ -115,6 +119,7 @@ export default function CategoriesPage() {
     try {
       const res = await fetch(`/api/categories/${deletingCategory.id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
 
       if (!res.ok) {

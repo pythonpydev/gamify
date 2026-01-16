@@ -65,8 +65,8 @@ export default function DashboardPage() {
 
         // Fetch stats and sessions in parallel
         const [statsRes, sessionsRes] = await Promise.all([
-          fetch('/api/users/me/stats'),
-          fetch('/api/sessions?limit=5'),
+          fetch('/api/users/me/stats', { credentials: 'include' }),
+          fetch('/api/sessions?limit=5', { credentials: 'include' }),
         ]);
 
         if (!statsRes.ok || !sessionsRes.ok) {
