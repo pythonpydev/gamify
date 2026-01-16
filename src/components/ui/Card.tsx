@@ -8,9 +8,9 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const variantStyles = {
-  default: 'bg-white border border-gray-200',
-  elevated: 'bg-white shadow-lg border border-gray-100',
-  outlined: 'bg-transparent border-2 border-gray-300',
+  default: 'bg-neutral-800 border border-neutral-700',
+  elevated: 'bg-neutral-800 shadow-lg border border-neutral-700',
+  outlined: 'bg-transparent border-2 border-neutral-600',
 };
 
 const paddingStyles = {
@@ -52,8 +52,8 @@ export function CardHeader({ title, description, action, className, ...props }: 
   return (
     <div className={cn('flex items-start justify-between mb-4', className)} {...props}>
       <div>
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
+        {description && <p className="text-sm text-neutral-400 mt-1">{description}</p>}
       </div>
       {action && <div>{action}</div>}
     </div>
