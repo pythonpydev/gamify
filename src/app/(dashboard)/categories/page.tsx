@@ -35,11 +35,18 @@ export default function CategoriesPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to fetch categories');
+        const errorData = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          setError('Please log in to view categories');
+        } else {
+          setError(errorData.error || 'Failed to load categories');
+        }
+        return;
       }
 
       const data = await res.json();
       setCategories(data.categories);
+      setError(null);
     } catch (err) {
       console.error('Failed to fetch categories:', err);
       setError('Failed to load categories');
