@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { prisma } from '@/lib/db/prisma';
+import { prisma, withRetry } from '@/lib/db/prisma';
 import { syncUserToDatabase } from '@/lib/utils/syncUser';
 
 /**
@@ -28,10 +28,10 @@ export async function GET() {
       );
     }
 
-    let user = await prisma.user.findUnique({
+    let user = await withRetry(() => prisma.user.findUnique({
       where: { authId: authUser.id },
       select: { id: true },
-    });
+    }));
 
     // If user doesn't exist in database, sync them from Supabase Auth
     if (!user) {
@@ -48,8 +48,8 @@ export async function GET() {
     }
 
     // Get categories with session count
-    const categories = await prisma.category.findMany({
-      where: { userId: user.id },
+    const categories = await withRetry(() => prisma.category.findMany({
+      where: { userId: user!.id },
       orderBy: [
         { isDefault: 'desc' },
         { name: 'asc' },
@@ -59,7 +59,7 @@ export async function GET() {
           select: { sessions: true },
         },
       },
-    });
+    }));
 
     const formattedCategories = categories.map((cat) => ({
       id: cat.id,
@@ -72,8 +72,9 @@ export async function GET() {
     return NextResponse.json({ categories: formattedCategories });
   } catch (error) {
     console.error('Failed to fetch categories:', error);
+    const message = error instanceof Error ? error.message : 'Failed to fetch categories';
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { error: 'Failed to fetch categories', details: message },
       { status: 500 }
     );
   }
@@ -96,10 +97,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const user = await withRetry(() => prisma.user.findUnique({
       where: { authId: authUser.id },
       select: { id: true },
-    });
+    }));
 
     if (!user) {
       return NextResponse.json(
@@ -134,12 +135,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Check for duplicate name
-    const existing = await prisma.category.findFirst({
+    const existing = await withRetry(() => prisma.category.findFirst({
       where: {
         userId: user.id,
         name: { equals: name.trim(), mode: 'insensitive' },
       },
-    });
+    }));
 
     if (existing) {
       return NextResponse.json(
@@ -149,20 +150,21 @@ export async function POST(request: NextRequest) {
     }
 
     // Create category
-    const category = await prisma.category.create({
+    const category = await withRetry(() => prisma.category.create({
       data: {
         userId: user.id,
         name: name.trim(),
         color: color || '#6366f1',
         isDefault: false,
       },
-    });
+    }));
 
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {
     console.error('Failed to create category:', error);
+    const message = error instanceof Error ? error.message : 'Failed to create category';
     return NextResponse.json(
-      { error: 'Failed to create category' },
+      { error: 'Failed to create category', details: message },
       { status: 500 }
     );
   }
