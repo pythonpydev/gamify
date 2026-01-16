@@ -27,11 +27,13 @@ export interface ChipCalculationResult {
  *
  * @param durationMins - Actual duration of the session in minutes
  * @param qualityRating - User's self-rated quality (1-5)
+ * @param isTestSession - Whether this is a test session (awards minimum chips)
  * @returns Chip breakdown with base, bonus, and total
  */
 export function calculateChips(
   durationMins: number,
-  qualityRating: number
+  qualityRating: number,
+  isTestSession: boolean = false
 ): ChipCalculationResult {
   // Validate inputs
   if (durationMins < 0) {
@@ -39,6 +41,16 @@ export function calculateChips(
   }
   if (qualityRating < 1 || qualityRating > 5) {
     throw new Error('Quality rating must be between 1 and 5');
+  }
+
+  // Test sessions always earn 1 chip + quality bonus (for testing purposes)
+  if (isTestSession) {
+    const qualityBonus = qualityRating;
+    return {
+      baseChips: 1,
+      qualityBonus,
+      totalChips: 1 + qualityBonus,
+    };
   }
 
   // Sessions under 5 minutes earn no chips

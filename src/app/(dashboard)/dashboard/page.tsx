@@ -10,7 +10,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 
 interface SessionApiResponse {
   id: string;
-  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK';
+  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK' | 'TEST_HAND';
   durationMins: number;
   chipsEarned: number;
   qualityRating: number | null;
@@ -42,6 +42,7 @@ interface DashboardStats {
     QUICK_HAND: number;
     STANDARD: number;
     DEEP_STACK: number;
+    TEST_HAND: number;
   };
 }
 

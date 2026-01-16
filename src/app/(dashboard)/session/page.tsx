@@ -82,50 +82,116 @@ export default function SessionPage() {
       : sessionConfig.duration * 60;
     const durationMins = Math.ceil(durationSeconds / 60);
 
-    // Start the session in store
-    startSession({
-      id: `local-${Date.now()}`, // Temporary ID until API creates real one
-      categoryId: selectedCategory,
-      categoryName: category.name,
-      categoryColor: category.color,
-      sessionType: selectedType,
-      durationMins,
-      startTime: new Date().toISOString(),
-      status: 'ACTIVE',
-    });
+    try {
+      // Create session via API
+      const res = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          categoryId: selectedCategory,
+          sessionType: selectedType,
+        }),
+      });
 
-    // Start the timer
-    timer.start(durationSeconds);
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Failed to create session:', errorData);
+        alert(errorData.error?.message || 'Failed to start session');
+        return;
+      }
+
+      const session = await res.json();
+
+      // Start the session in store with the real ID from the API
+      startSession({
+        id: session.id,
+        categoryId: selectedCategory,
+        categoryName: category.name,
+        categoryColor: category.color,
+        sessionType: selectedType,
+        durationMins,
+        startTime: new Date().toISOString(),
+        status: 'ACTIVE',
+      });
+
+      // Start the timer
+      timer.start(durationSeconds);
+    } catch (error) {
+      console.error('Failed to start session:', error);
+      alert('Failed to start session. Please try again.');
+    }
   };
 
-  const handleCompleteSession = async (qualityRating: number, _notes?: string) => {
+  const handleCompleteSession = async (qualityRating: number, notes?: string) => {
     if (!activeSession) return;
 
     setIsSubmitting(true);
 
     try {
-      // In a real app, this would call the API
-      // For now, just update local state
-      completeSession(qualityRating, 0);
+      // Complete session via API
+      const res = await fetch(`/api/sessions/${activeSession.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          status: 'COMPLETED',
+          qualityRating,
+          notes,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error('Failed to complete session:', errorData);
+        alert(errorData.error?.message || 'Failed to complete session');
+        return;
+      }
+
+      const data = await res.json();
+      
+      // Update local state with chips earned
+      completeSession(qualityRating, data.chipsEarned || 0);
 
       setShowCompletionModal(false);
       clearSession();
       timer.reset();
 
-      // Navigate to dashboard or show success
-      // router.push('/');
+      // Show success message with chips earned
+      if (data.chipsEarned > 0) {
+        alert(`Session completed! You earned ${data.chipsEarned} chips! 🎰`);
+      }
     } catch (error) {
       console.error('Failed to complete session:', error);
+      alert('Failed to complete session. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleAbandonSession = () => {
-    if (confirm('Are you sure you want to abandon this session? You won\'t earn any chips.')) {
-      clearSession();
-      timer.reset();
+  const handleAbandonSession = async () => {
+    if (!confirm('Are you sure you want to abandon this session? You won\'t earn any chips.')) {
+      return;
     }
+
+    if (activeSession) {
+      try {
+        // Abandon session via API
+        await fetch(`/api/sessions/${activeSession.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            status: 'ABANDONED',
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to abandon session:', error);
+      }
+    }
+
+    clearSession();
+    timer.reset();
   };
 
   const isSessionActive = timer.isRunning || timer.isPaused;

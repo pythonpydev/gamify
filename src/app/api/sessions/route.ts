@@ -120,12 +120,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get duration from session type
-    const durations = {
+    const durations: Record<string, number> = {
       QUICK_HAND: 15,
       STANDARD: 25,
       DEEP_STACK: 50,
+      TEST_HAND: 1, // 10 seconds, stored as 1 minute for DB
     };
-    const durationMins = durations[sessionType];
+    const durationMins = durations[sessionType] || 25;
 
     // Create the session
     const session = await prisma.studySession.create({

@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 
 export interface SessionDisplay {
   id: string;
-  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK';
+  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK' | 'TEST_HAND';
   categoryName: string;
   categoryColor: string;
   durationMinutes: number;
@@ -20,16 +20,18 @@ export interface SessionCardProps {
   className?: string;
 }
 
-const sessionTypeLabels = {
+const sessionTypeLabels: Record<string, string> = {
   QUICK_HAND: 'Quick Hand',
   STANDARD: 'Standard',
   DEEP_STACK: 'Deep Stack',
+  TEST_HAND: 'Test Hand',
 };
 
-const sessionTypeEmoji = {
+const sessionTypeEmoji: Record<string, string> = {
   QUICK_HAND: '⚡',
   STANDARD: '🃏',
   DEEP_STACK: '♠️',
+  TEST_HAND: '🧪',
 };
 
 export function SessionCard({ session, className }: SessionCardProps) {
