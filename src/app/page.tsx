@@ -9,7 +9,7 @@ export default function LandingPage() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🎰</span>
-            <span className="text-xl font-bold text-white">Study Poker</span>
+            <span className="text-xl font-bold text-white">Pokerdoro</span>
           </div>
           <div className="flex items-center gap-4">
             <Link
@@ -94,7 +94,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 mt-20 border-t border-neutral-800">
         <div className="text-center text-neutral-500 text-sm">
-          <p>© {new Date().getFullYear()} Study Poker. Built for focused learners.</p>
+          <p>© {new Date().getFullYear()} Pokerdoro. Built for focused learners.</p>
         </div>
       </footer>
     </div>

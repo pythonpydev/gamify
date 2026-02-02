@@ -31,7 +31,7 @@ export function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🎰</span>
-            <span className="text-xl font-bold text-white">Study Poker</span>
+            <span className="text-xl font-bold text-white">Pokerdoro</span>
           </Link>
 
           {/* Desktop navigation */}

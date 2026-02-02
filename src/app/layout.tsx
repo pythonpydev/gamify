@@ -13,7 +13,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: 'Study Poker - Gamified Pomodoro Timer',
+  title: 'Pokerdoro - Gamified Pomodoro Timer',
   description: 'Turn your study sessions into poker winnings. Earn chips, climb ranks, and master your focus.',
   keywords: ['pomodoro', 'timer', 'study', 'gamification', 'productivity', 'poker'],
 };

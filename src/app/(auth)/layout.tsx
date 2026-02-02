@@ -10,7 +10,7 @@ export default function AuthLayout({
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center gap-2">
             <span className="text-3xl">🎰</span>
-            <span className="text-2xl font-bold text-white">Study Poker</span>
+            <span className="text-2xl font-bold text-white">Pokerdoro</span>
           </a>
         </div>
 

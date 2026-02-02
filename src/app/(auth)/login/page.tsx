@@ -1,8 +1,8 @@
 import { LoginForm } from '@/components/auth';
 
 export const metadata = {
-  title: 'Sign In | Study Poker',
-  description: 'Sign in to your Study Poker account',
+  title: 'Sign In | Pokerdoro',
+  description: 'Sign in to your Pokerdoro account',
 };
 
 export default function LoginPage() {
