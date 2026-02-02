@@ -14,10 +14,11 @@ export interface TimerState {
 export interface UseTimerOptions {
   onComplete?: () => void;
   onTick?: (remainingSeconds: number) => void;
+  playAlarmOnComplete?: boolean;
 }
 
 export function useTimer(options: UseTimerOptions = {}) {
-  const { onComplete, onTick } = options;
+  const { onComplete, onTick, playAlarmOnComplete = false } = options;
 
   const [state, setState] = useState<TimerState>({
     status: 'IDLE',
@@ -30,12 +31,14 @@ export function useTimer(options: UseTimerOptions = {}) {
   const totalSecondsRef = useRef<number>(0);
   const onCompleteRef = useRef(onComplete);
   const onTickRef = useRef(onTick);
+  const playAlarmRef = useRef(playAlarmOnComplete);
 
   // Keep callback refs up to date
   useEffect(() => {
     onCompleteRef.current = onComplete;
     onTickRef.current = onTick;
-  }, [onComplete, onTick]);
+    playAlarmRef.current = playAlarmOnComplete;
+  }, [onComplete, onTick, playAlarmOnComplete]);
 
   // Initialize worker
   useEffect(() => {
@@ -168,6 +171,15 @@ export function useTimer(options: UseTimerOptions = {}) {
             remainingSeconds: 0,
             elapsedSeconds: totalSecondsRef.current,
           }));
+          
+          // Play alarm if enabled
+          if (playAlarmRef.current) {
+            // Dynamically import to avoid issues with SSR
+            import('@/lib/utils/alarm').then(({ playAlarm }) => {
+              playAlarm();
+            });
+          }
+          
           onCompleteRef.current?.();
           break;
         case 'PAUSED':

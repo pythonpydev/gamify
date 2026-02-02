@@ -14,13 +14,18 @@ export interface Rank {
 }
 
 export const RANKS: readonly Rank[] = [
-  { name: 'Fish', minChips: 0, color: '#64748b', emoji: '🐟' },
-  { name: 'Calling Station', minChips: 1000, color: '#22c55e', emoji: '📞' },
-  { name: 'TAG Regular', minChips: 5000, color: '#3b82f6', emoji: '🃏' },
-  { name: 'Semi-Pro', minChips: 15000, color: '#8b5cf6', emoji: '🎰' },
-  { name: 'Pro', minChips: 50000, color: '#ec4899', emoji: '💎' },
-  { name: 'High Roller', minChips: 100000, color: '#f59e0b', emoji: '🎲' },
-  { name: 'Legend', minChips: 500000, color: '#ef4444', emoji: '👑' },
+  { name: 'Fish', minChips: 0, color: '#06b6d4', emoji: '🐟' },
+  { name: 'Calling Station', minChips: 500, color: '#ec4899', emoji: '📞' },
+  { name: 'ABC', minChips: 1000, color: '#fde047', emoji: '🎯' },
+  { name: 'TAG Regular', minChips: 2000, color: '#a855f7', emoji: '🃏' },
+  { name: 'Semi Pro', minChips: 5000, color: '#f97316', emoji: '🎰' },
+  { name: 'Grinder', minChips: 10000, color: '#22c55e', emoji: '⚙️' },
+  { name: 'Shark', minChips: 20000, color: '#3b82f6', emoji: '🦈' },
+  { name: 'Pro', minChips: 50000, color: '#64748b', emoji: '💎' },
+  { name: 'High Roller', minChips: 100000, color: '#ef4444', emoji: '🎲' },
+  { name: 'Champion', minChips: 250000, color: '#ffffff', emoji: '🏆' },
+  { name: 'Legend', minChips: 500000, color: '#84cc16', emoji: '👑' },
+  { name: 'GOAT', minChips: 1000000, color: '#fbbf24', emoji: '🐐' },
 ] as const;
 
 /**
@@ -70,7 +75,7 @@ export function getNextRank(totalChipsEarned: number): Rank | null {
     return RANKS[currentIndex + 1];
   }
 
-  return null; // Already at Legend
+  return null; // Already at GOAT
 }
 
 /**

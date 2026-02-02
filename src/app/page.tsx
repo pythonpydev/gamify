@@ -67,7 +67,7 @@ export default function LandingPage() {
           <FeatureCard
             icon="🏆"
             title="Rank Up"
-            description="Progress through 7 poker ranks from Fish to Legend as you accumulate chips."
+            description="Progress through 12 poker ranks from Fish to GOAT as you accumulate chips."
           />
         </div>
 
@@ -75,13 +75,18 @@ export default function LandingPage() {
         <div className="mt-24 text-center">
           <h2 className="text-3xl font-bold text-white mb-8">Climb the Ranks</h2>
           <div className="flex flex-wrap justify-center gap-4">
-            <RankBadge rank="Fish" chips="0" color="text-neutral-400" />
-            <RankBadge rank="Grinder" chips="500" color="text-green-500" />
-            <RankBadge rank="Shark" chips="2,000" color="text-blue-500" />
-            <RankBadge rank="Pro" chips="5,000" color="text-purple-500" />
-            <RankBadge rank="High Roller" chips="15,000" color="text-orange-500" />
-            <RankBadge rank="Champion" chips="50,000" color="text-red-500" />
-            <RankBadge rank="Legend" chips="100,000" color="text-poker-gold" />
+            <RankBadge rank="Fish" chips="0" color="text-cyan-400" />
+            <RankBadge rank="Calling Station" chips="500" color="text-pink-500" />
+            <RankBadge rank="ABC" chips="1,000" color="text-yellow-300" />
+            <RankBadge rank="TAG Regular" chips="2,000" color="text-purple-500" />
+            <RankBadge rank="Semi Pro" chips="5,000" color="text-orange-500" />
+            <RankBadge rank="Grinder" chips="10,000" color="text-green-500" />
+            <RankBadge rank="Shark" chips="20,000" color="text-blue-500" />
+            <RankBadge rank="Pro" chips="50,000" color="text-slate-500" />
+            <RankBadge rank="High Roller" chips="100,000" color="text-red-500" />
+            <RankBadge rank="Champion" chips="250,000" color="text-white" />
+            <RankBadge rank="Legend" chips="500,000" color="text-lime-500" />
+            <RankBadge rank="GOAT" chips="1,000,000" color="text-amber-400" />
           </div>
         </div>
       </main>

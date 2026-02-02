@@ -4,3 +4,5 @@ export { Input } from './Input';
 export type { InputProps } from './Input';
 export { Card, CardHeader, CardContent, CardFooter } from './Card';
 export type { CardProps, CardHeaderProps, CardContentProps, CardFooterProps } from './Card';
+export { Toggle } from './Toggle';
+export type { ToggleProps } from './Toggle';

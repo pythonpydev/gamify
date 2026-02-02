@@ -69,7 +69,7 @@ export function RankBadge({
 
       {showProgress && !nextRank && (
         <div className="text-xs text-poker-gold text-center">
-          🏆 Maximum rank achieved!
+          🏆 Maximum rank achieved! You are the GOAT!
         </div>
       )}
     </div>

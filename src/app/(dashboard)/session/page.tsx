@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Toggle } from '@/components/ui/Toggle';
 import {
   TimerDisplay,
   SessionTypeSelector,
@@ -13,6 +14,7 @@ import {
 import { useTimer } from '@/lib/hooks/useTimer';
 import { useSessionStore } from '@/lib/store/sessionStore';
 import { SESSION_TYPES, type SessionTypeName } from '@/types/database';
+import { initAudioContext, testAlarm } from '@/lib/utils/alarm';
 
 export default function SessionPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -21,6 +23,7 @@ export default function SessionPage() {
   const [selectedType, setSelectedType] = useState<SessionTypeName | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alarmEnabled, setAlarmEnabled] = useState(true);
 
   const { activeSession, startSession, completeSession, clearSession } = useSessionStore();
 
@@ -30,6 +33,7 @@ export default function SessionPage() {
 
   const timer = useTimer({
     onComplete: handleTimerComplete,
+    playAlarmOnComplete: alarmEnabled,
   });
 
   // Fetch categories from API
@@ -274,11 +278,47 @@ export default function SessionPage() {
         {timer.isIdle && (
           <>
             <Card variant="default" padding="lg" className="mb-4">
-              <SessionTypeSelector
-                value={selectedType}
-                onChange={setSelectedType}
-                disabled={isSessionActive}
-              />
+              <div className="space-y-4">
+                <SessionTypeSelector
+                  value={selectedType}
+                  onChange={setSelectedType}
+                  disabled={isSessionActive}
+                />
+                
+                {/* Alarm Toggle */}
+                <div className="flex items-center justify-between pt-4 border-t border-neutral-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl">🔔</span>
+                    <div>
+                      <div className="text-sm font-medium text-white">Sound Alarm</div>
+                      <div className="text-xs text-neutral-400">Play audio when timer completes</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Toggle
+                      enabled={alarmEnabled}
+                      onChange={(enabled) => {
+                        setAlarmEnabled(enabled);
+                        // Initialize audio context on first interaction
+                        if (enabled) {
+                          initAudioContext();
+                        }
+                      }}
+                    />
+                    {alarmEnabled && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          testAlarm();
+                        }}
+                        className="text-xs text-poker-gold hover:text-poker-gold/80 underline"
+                      >
+                        Test
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
             </Card>
 
             <Card variant="default" padding="lg">
