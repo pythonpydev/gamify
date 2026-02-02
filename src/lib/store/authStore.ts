@@ -16,6 +16,8 @@ export interface AuthActions {
   login: (email: string, password: string) => Promise<{ error?: string }>;
   register: (email: string, password: string) => Promise<{ error?: string }>;
   logout: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ error?: string }>;
   clearError: () => void;
   setUser: (user: SupabaseUser | null) => void;
   setSession: (session: Session | null) => void;
@@ -167,6 +169,52 @@ export const useAuthStore = create<AuthStore>()(
             isLoading: false,
             error: null,
           });
+        }
+      },
+
+      resetPassword: async (email: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const supabase = createClient();
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          });
+
+          if (error) {
+            set({ isLoading: false, error: error.message });
+            return { error: error.message };
+          }
+
+          set({ isLoading: false, error: null });
+          return {};
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Password reset failed';
+          set({ isLoading: false, error: errorMessage });
+          return { error: errorMessage };
+        }
+      },
+
+      updatePassword: async (newPassword: string) => {
+        set({ isLoading: true, error: null });
+
+        try {
+          const supabase = createClient();
+          const { error } = await supabase.auth.updateUser({
+            password: newPassword,
+          });
+
+          if (error) {
+            set({ isLoading: false, error: error.message });
+            return { error: error.message };
+          }
+
+          set({ isLoading: false, error: null });
+          return {};
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Password update failed';
+          set({ isLoading: false, error: errorMessage });
+          return { error: errorMessage };
         }
       },
 
