@@ -8,7 +8,7 @@ import { prisma, withRetry } from '@/lib/db/prisma';
  */
 export async function GET() {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

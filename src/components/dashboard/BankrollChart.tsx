@@ -109,14 +109,13 @@ export function BankrollChart({ className }: BankrollChartProps) {
               color: '#f3f4f6',
             }}
             labelFormatter={(label) => {
-              const date = new Date(label);
+              const date = new Date(label as string);
               return date.toLocaleDateString('en-US', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric' 
               });
             }}
-            formatter={(value: number) => [formatChips(value) + ' chips', 'Total']}
           />
           <Line
             type="monotone"
