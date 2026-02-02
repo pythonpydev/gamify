@@ -139,3 +139,70 @@ export async function PATCH(
     );
   }
 }
+
+// DELETE /api/sessions/[sessionId] - Delete a session
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ sessionId: string }> }
+) {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+
+    if (!authUser) {
+      return NextResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+    }
+
+    const { sessionId } = await params;
+
+    // Find the session
+    const session = await prisma.studySession.findFirst({
+      where: {
+        id: sessionId,
+        user: { authId: authUser.id },
+      },
+    });
+
+    if (!session) {
+      return NextResponse.json(
+        { error: { message: 'Session not found' } },
+        { status: 404 }
+      );
+    }
+
+    // Delete the session and update user's chips in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete the session
+      await tx.studySession.delete({
+        where: { id: sessionId },
+      });
+
+      // Update user's total chips (subtract the chips from this session)
+      // Only subtract if chips were earned (completed sessions)
+      if (session.chipsEarned > 0) {
+        await tx.user.update({
+          where: { authId: authUser.id },
+          data: {
+            totalChipsEarned: { decrement: session.chipsEarned },
+            currentChips: { decrement: session.chipsEarned },
+          },
+        });
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Session deleted successfully',
+      chipsRemoved: session.chipsEarned,
+    });
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    return NextResponse.json(
+      { error: { message: 'Internal server error' } },
+      { status: 500 }
+    );
+  }
+}
+

@@ -37,6 +37,7 @@ export default function HistoryPage() {
   const [offset, setOffset] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('');
 
@@ -111,6 +112,44 @@ export default function HistoryPage() {
     fetchSessions(offset + limit, true);
   };
 
+  const handleDeleteSession = (sessionId: string) => {
+    // Remove the session from the list
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+    setTotal((prev) => prev - 1);
+  };
+
+  const handleResetAll = async () => {
+    if (!confirm('Are you sure you want to delete ALL sessions? This will reset your chips to 0 and cannot be undone!')) {
+      return;
+    }
+
+    try {
+      setIsResetting(true);
+      const res = await fetch('/api/sessions/reset', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to reset sessions');
+      }
+
+      const data = await res.json();
+      
+      // Clear the sessions list
+      setSessions([]);
+      setTotal(0);
+      setHasMore(false);
+      
+      alert(`Successfully deleted ${data.sessionsDeleted} sessions`);
+    } catch (err) {
+      console.error('Failed to reset sessions:', err);
+      alert('Failed to reset sessions. Please try again.');
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-poker-felt-dark flex items-center justify-center">
@@ -133,17 +172,31 @@ export default function HistoryPage() {
             </p>
           </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-4" data-testid="session-filters">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-poker-gold"
-            >
-              <option value="">All Sessions</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="ABANDONED">Abandoned</option>
-            </select>
+          <div className="flex items-center gap-4">
+            {/* Filters */}
+            <div data-testid="session-filters">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-poker-gold"
+              >
+                <option value="">All Sessions</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="ABANDONED">Abandoned</option>
+              </select>
+            </div>
+
+            {/* Reset All button */}
+            {total > 0 && (
+              <Button
+                variant="secondary"
+                onClick={handleResetAll}
+                disabled={isResetting}
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+              >
+                {isResetting ? 'Resetting...' : 'Reset All Sessions'}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -171,7 +224,11 @@ export default function HistoryPage() {
         ) : (
           <div className="space-y-4">
             {sessions.map((session) => (
-              <SessionCard key={session.id} session={session} />
+              <SessionCard 
+                key={session.id} 
+                session={session} 
+                onDelete={handleDeleteSession}
+              />
             ))}
 
             {hasMore && (
