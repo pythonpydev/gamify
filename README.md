@@ -100,9 +100,21 @@ Track your productivity with comprehensive statistics:
 
 - **Total chips earned** (lifetime earnings)
 - **Current rank** with progress to next rank
+- **Bankroll tracker chart** - Visual graph showing cumulative chip growth over time
 - **Recent sessions** with category breakdown
 - **Session history** with filters and sorting
 - Visual rank badge with progress indicator
+
+#### Bankroll Tracker
+
+The dashboard features a bankroll tracker chart that visualizes your chip accumulation over time:
+
+- **Line chart** showing cumulative chips earned (y-axis) vs. dates (x-axis)
+- Poker-gold colored line matching the app's theme
+- Hover tooltips with detailed date and chip information
+- Responsive design that adapts to screen size
+- Automatically updates as you complete sessions
+- Shows "No chip history yet" message for new users
 
 ### 🔐 Authentication & User Management
 
