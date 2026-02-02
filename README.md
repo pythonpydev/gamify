@@ -103,6 +103,7 @@ Track your productivity with comprehensive statistics:
 - **Bankroll tracker chart** - Visual graph showing cumulative chip growth over time
 - **Recent sessions** with category breakdown
 - **Session history** with filters and sorting
+- **Delete sessions** - Remove individual sessions or reset all progress
 - Visual rank badge with progress indicator
 
 #### Bankroll Tracker
@@ -115,6 +116,23 @@ The dashboard features a bankroll tracker chart that visualizes your chip accumu
 - Responsive design that adapts to screen size
 - Automatically updates as you complete sessions
 - Shows "No chip history yet" message for new users
+
+#### Session Management
+
+Manage your session history with flexible deletion options:
+
+- **Delete Individual Sessions** - Remove specific sessions with a single click
+  - Click the trash icon on any session card in the history page
+  - Confirmation dialog prevents accidental deletions
+  - Automatically subtracts chips from your total and updates your rank
+  - UI updates instantly after deletion
+
+- **Reset All Sessions** - Complete fresh start
+  - "Reset All Sessions" button in the history page (top-right corner)
+  - Deletes all sessions and resets chips to 0
+  - Returns you to Fish rank (starting rank)
+  - Requires double confirmation to prevent accidental resets
+  - Perfect for starting a new semester or challenge
 
 ### 🔐 Authentication & User Management
 
