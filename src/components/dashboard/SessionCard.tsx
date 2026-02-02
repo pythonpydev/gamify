@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 
 export interface SessionDisplay {
   id: string;
-  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK' | 'TEST_HAND';
+  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK';
   categoryName: string;
   categoryColor: string;
   durationMinutes: number;

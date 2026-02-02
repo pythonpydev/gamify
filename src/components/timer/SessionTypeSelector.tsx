@@ -15,7 +15,6 @@ const sessionTypeInfo: Record<SessionTypeName, { emoji: string; description: str
   QUICK_HAND: { emoji: '⚡', description: 'Quick focus burst' },
   STANDARD: { emoji: '🃏', description: 'Classic Pomodoro' },
   DEEP_STACK: { emoji: '🎰', description: 'Deep work session' },
-  TEST_HAND: { emoji: '🧪', description: 'Testing only' },
 };
 
 export function SessionTypeSelector({

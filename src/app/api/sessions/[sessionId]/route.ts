@@ -93,9 +93,8 @@ export async function PATCH(
     let chipsEarned = 0;
 
     if (status === 'COMPLETED' && qualityRating) {
-      // Calculate chips - check if it's a test session
-      const isTestSession = session.sessionType === 'TEST_HAND';
-      const chipResult = calculateChips(session.durationMins, qualityRating, isTestSession);
+      // Calculate chips
+      const chipResult = calculateChips(session.durationMins, qualityRating);
       chipsEarned = chipResult.totalChips;
     }
 

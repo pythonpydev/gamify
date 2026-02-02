@@ -124,7 +124,6 @@ export async function POST(request: NextRequest) {
       QUICK_HAND: 15,
       STANDARD: 25,
       DEEP_STACK: 50,
-      TEST_HAND: 1, // 10 seconds, stored as 1 minute for DB
     };
     const durationMins = durations[sessionType] || 25;
 

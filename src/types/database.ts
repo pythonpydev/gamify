@@ -19,7 +19,7 @@ export interface SessionWithCategory {
   id: string;
   userId: string;
   categoryId: string;
-  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK' | 'TEST_HAND';
+  sessionType: 'QUICK_HAND' | 'STANDARD' | 'DEEP_STACK';
   startTime: Date;
   endTime: Date | null;
   durationMins: number;
@@ -37,12 +37,10 @@ export interface SessionWithCategory {
 }
 
 // Session type configuration
-// Note: TEST_HAND uses durationSeconds for 10-second timer
 export const SESSION_TYPES = {
   QUICK_HAND: { duration: 15, label: 'Quick Hand' },
   STANDARD: { duration: 25, label: 'Standard Hand' },
   DEEP_STACK: { duration: 50, label: 'Deep Stack' },
-  TEST_HAND: { duration: 0, durationSeconds: 10, label: 'Test Hand' },
 } as const;
 
 export type SessionTypeName = keyof typeof SESSION_TYPES;

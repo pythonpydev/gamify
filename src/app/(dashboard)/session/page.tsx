@@ -80,11 +80,8 @@ export default function SessionPage() {
     if (!category) return;
 
     const sessionConfig = SESSION_TYPES[selectedType];
-    // Handle TEST_HAND which uses durationSeconds instead of duration
-    const durationSeconds = 'durationSeconds' in sessionConfig 
-      ? sessionConfig.durationSeconds 
-      : sessionConfig.duration * 60;
-    const durationMins = Math.ceil(durationSeconds / 60);
+    const durationSeconds = sessionConfig.duration * 60;
+    const durationMins = sessionConfig.duration;
 
     try {
       // Create session via API
