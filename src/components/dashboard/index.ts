@@ -1,3 +1,4 @@
+export { BankrollChart } from './BankrollChart';
 export { ChipCounter } from './ChipCounter';
 export { RankBadge } from './RankBadge';
 export { RecentSessions } from './RecentSessions';

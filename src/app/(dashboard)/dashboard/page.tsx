@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChipCounter, RankBadge, RecentSessions, type SessionDisplay } from '@/components/dashboard';
+import { ChipCounter, RankBadge, RecentSessions, BankrollChart, type SessionDisplay } from '@/components/dashboard';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -151,13 +151,14 @@ export default function DashboardPage() {
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Chips & Rank Card */}
           <Card className="p-6 md:col-span-2">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between mb-6">
               <div>
                 <h2 className="text-sm font-medium text-neutral-400 mb-2">Your Progress</h2>
                 <ChipCounter chips={stats?.totalChipsEarned || 0} size="lg" />
               </div>
               <RankBadge totalChips={stats?.totalChipsEarned || 0} />
             </div>
+            <BankrollChart />
           </Card>
 
           {/* Quick Stats Card */}
