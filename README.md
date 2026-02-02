@@ -142,12 +142,116 @@ Stay informed when your session completes:
 - [Vitest](https://vitest.dev/) - Unit testing framework
 - [Playwright](https://playwright.dev/) - End-to-end testing
 
+## �️ Dev Environment Setup
+
+### Database Options
+
+You need a PostgreSQL database for development. Choose one of these options:
+
+#### Option 1: Neon (Recommended - No Installation Required) ⭐
+
+**Best for:** Developers without admin privileges or who want quick setup.
+
+1. **Sign up at [Neon.tech](https://neon.tech)** (free account)
+   - Sign up with GitHub, Google, or email
+   - No credit card required
+
+2. **Create a new project:**
+   - Click "Create a project" or "New Project"
+   - Name: `gamify` (or your choice)
+   - Region: Choose closest to your location
+   - PostgreSQL version: 15 or 16
+
+3. **Copy your connection string:**
+   - After project creation, find the **Connection Details** section
+   - Copy the entire connection string (looks like):
+     ```
+     postgresql://neondb_owner:xxxxx@ep-xxxx.neon.tech/neondb?sslmode=require
+     ```
+
+4. **Update `.env.local`:**
+   ```env
+   # Supabase Configuration (for auth)
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   
+   # Neon Database
+   DATABASE_URL=<paste-your-neon-connection-string-here>
+   DIRECT_URL=<paste-your-neon-connection-string-here>
+   ```
+
+5. **Run migrations:**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+**Neon Benefits:**
+- ✅ 3GB storage on free tier
+- ✅ Always-on database
+- ✅ Automatic backups
+- ✅ No installation required
+- ✅ Works from any machine
+
+#### Option 2: Docker Desktop (Requires Admin Privileges)
+
+**Best for:** Local development with full control.
+
+1. **Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)**
+
+2. **Start the database:**
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Update `.env.local`:**
+   ```env
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/gamify
+   DIRECT_URL=postgresql://postgres:postgres@localhost:5432/gamify
+   ```
+
+4. **Run migrations:**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+#### Option 3: Local PostgreSQL Installation
+
+**Best for:** Those who already have PostgreSQL installed.
+
+1. **Install [PostgreSQL](https://www.postgresql.org/download/)**
+
+2. **Create database:**
+   ```bash
+   psql -U postgres
+   CREATE DATABASE gamify;
+   \q
+   ```
+
+3. **Update `.env.local`:**
+   ```env
+   DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/gamify
+   DIRECT_URL=postgresql://postgres:YOUR_PASSWORD@localhost:5432/gamify
+   ```
+
+4. **Run migrations:**
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+#### Other Cloud Database Options
+
+- **[Supabase](https://supabase.com)** - 500MB free tier
+- **[Railway](https://railway.app)** - $5 free credit monthly  
+- **[ElephantSQL](https://www.elephantsql.com)** - 20MB free tier
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- PostgreSQL database (or Supabase account)
+- PostgreSQL database (see [Dev Environment Setup](#%EF%B8%8F-dev-environment-setup) above)
 - Supabase account for authentication
 
 ### Installation
@@ -289,6 +393,55 @@ Run end-to-end tests:
 ```bash
 npm run test:e2e
 ```
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+This project is optimized for deployment on Vercel:
+
+1. **Push your code to GitHub**
+   ```bash
+   git add .
+   git commit -m "Your changes"
+   git push origin main
+   ```
+
+2. **Vercel auto-deploys** (if connected to GitHub)
+   - Deployments typically complete in 1-2 minutes
+   - Preview deployments for pull requests
+   - Production deployment on `main` branch
+
+3. **Environment Variables**
+   
+   Make sure these are set in your Vercel project settings:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `DATABASE_URL`
+   - `DIRECT_URL`
+
+4. **View your deployment**
+   - Production: `https://your-project.vercel.app`
+   - Dashboard: `https://vercel.com/dashboard`
+
+### First-Time Deployment
+
+If not yet deployed:
+
+1. Go to [vercel.com](https://vercel.com)
+2. Sign in with GitHub
+3. Click "Import Project"
+4. Select your `gamify` repository
+5. Vercel auto-detects Next.js configuration
+6. Add environment variables
+7. Deploy!
+
+### Deploy to Other Platforms
+
+The app can also be deployed to:
+- **Netlify** - Similar to Vercel
+- **Railway** - Includes database hosting
+- **Self-hosted** - Use `npm run build` then `npm start`
 
 ## 🎮 Game Mechanics Explained
 
