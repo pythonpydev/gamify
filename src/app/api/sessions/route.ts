@@ -3,6 +3,9 @@ import { prisma } from '@/lib/db';
 import { createClient } from '@/lib/supabase/server';
 import { syncUserToDatabase } from '@/lib/utils/syncUser';
 import type { CreateSessionRequest } from '@/types/api';
+import { validateSessionType, validatePagination } from '@/lib/utils/validation';
+import { checkRateLimit, getRateLimitIdentifier, getRateLimitHeaders, RATE_LIMITS } from '@/lib/utils/rateLimit';
+import { logRequest, getRequestMetadata } from '@/lib/utils/apiLogger';
 
 // Helper to get or create user in database
 async function getOrCreateUser(authUser: { id: string; email?: string }) {
@@ -20,21 +23,41 @@ async function getOrCreateUser(authUser: { id: string; email?: string }) {
 
 // GET /api/sessions - List user's sessions
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const metadata = getRequestMetadata(request);
+  
   try {
+    // Rate limiting
+    const rateLimitId = getRateLimitIdentifier(request, 'sessions:read');
+    const rateLimit = checkRateLimit(rateLimitId, RATE_LIMITS.API_READ);
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: { message: 'Too many requests' } },
+        { status: 429, headers: getRateLimitHeaders(rateLimit) }
+      );
+    }
+    
     const supabase = await createClient();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
 
     if (!authUser) {
-      return NextResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+      logRequest({ ...metadata, statusCode: 401, duration: Date.now() - startTime });
+      return NextResponse.json(
+        { error: { message: 'Unauthorized' } },
+        { status: 401, headers: getRateLimitHeaders(rateLimit) }
+      );
     }
 
     const user = await getOrCreateUser(authUser);
 
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const pagination = validatePagination(
+      searchParams.get('limit') || undefined,
+      searchParams.get('offset') || undefined
+    );
     const status = searchParams.get('status');
 
     const where = {
@@ -46,8 +69,8 @@ export async function GET(request: NextRequest) {
       prisma.studySession.findMany({
         where,
         orderBy: { startTime: 'desc' },
-        take: limit,
-        skip: offset,
+        take: pagination.limit,
+        skip: pagination.offset,
         include: {
           category: {
             select: { id: true, name: true, color: true },
@@ -57,15 +80,31 @@ export async function GET(request: NextRequest) {
       prisma.studySession.count({ where }),
     ]);
 
-    return NextResponse.json({
-      sessions,
-      total,
-      hasMore: offset + sessions.length < total,
+    logRequest({ 
+      ...metadata, 
+      userId: authUser.id, 
+      statusCode: 200, 
+      duration: Date.now() - startTime 
     });
-  } catch (error) {
-    console.error('Error fetching sessions:', error);
+
     return NextResponse.json(
-      { error: { message: 'Internal server error' } },
+      {
+        sessions,
+        total,
+        hasMore: pagination.offset + sessions.length < total,
+      },
+      { headers: getRateLimitHeaders(rateLimit) }
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Internal server error';
+    logRequest({ 
+      ...metadata, 
+      statusCode: 500, 
+      duration: Date.now() - startTime,
+      error: message 
+    });
+    return NextResponse.json(
+      { error: { message } },
       { status: 500 }
     );
   }
@@ -73,18 +112,52 @@ export async function GET(request: NextRequest) {
 
 // POST /api/sessions - Create new session
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  const metadata = getRequestMetadata(request);
+  
   try {
+    // Rate limiting
+    const rateLimitId = getRateLimitIdentifier(request, 'sessions:create');
+    const rateLimit = checkRateLimit(rateLimitId, RATE_LIMITS.API_WRITE);
+    
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: { message: 'Too many requests' } },
+        { status: 429, headers: getRateLimitHeaders(rateLimit) }
+      );
+    }
+    
     const supabase = await createClient();
     const {
       data: { user: authUser },
     } = await supabase.auth.getUser();
 
     if (!authUser) {
-      return NextResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+      logRequest({ ...metadata, statusCode: 401, duration: Date.now() - startTime });
+      return NextResponse.json(
+        { error: { message: 'Unauthorized' } },
+        { status: 401, headers: getRateLimitHeaders(rateLimit) }
+      );
     }
 
     const body: CreateSessionRequest = await request.json();
     const { categoryId, sessionType } = body;
+    
+    // Validate session type
+    const typeValidation = validateSessionType(sessionType);
+    if (!typeValidation.valid) {
+      logRequest({ 
+        ...metadata, 
+        userId: authUser.id, 
+        statusCode: 400, 
+        duration: Date.now() - startTime,
+        error: typeValidation.error 
+      });
+      return NextResponse.json(
+        { error: { message: typeValidation.error } },
+        { status: 400, headers: getRateLimitHeaders(rateLimit) }
+      );
+    }
 
     // Get or create the user in our database
     const user = await getOrCreateUser(authUser);
@@ -144,10 +217,25 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(session, { status: 201 });
+    logRequest({ 
+      ...metadata, 
+      userId: authUser.id, 
+      statusCode: 201, 
+      duration: Date.now() - startTime 
+    });
+
+    return NextResponse.json(
+      session,
+      { status: 201, headers: getRateLimitHeaders(rateLimit) }
+    );
   } catch (error) {
-    console.error('Error creating session:', error);
     const message = error instanceof Error ? error.message : 'Internal server error';
+    logRequest({ 
+      ...metadata, 
+      statusCode: 500, 
+      duration: Date.now() - startTime,
+      error: message 
+    });
     return NextResponse.json(
       { error: { message, details: String(error) } },
       { status: 500 }
