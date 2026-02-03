@@ -3,7 +3,7 @@
  */
 
 export interface LogEntry {
-  timestamp: string;
+  timestamp?: string;
   method: string;
   path: string;
   userId?: string;

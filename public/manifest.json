@@ -1,0 +1,49 @@
+{
+  "name": "Pokerdoro - Gamified Pomodoro Timer",
+  "short_name": "Pokerdoro",
+  "description": "A gamified Pomodoro timer that rewards your focus with poker-style chips and rankings",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "education", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Start Quick Session",
+      "short_name": "Quick",
+      "description": "Start a 15-minute quick hand session",
+      "url": "/session?type=quick",
+      "icons": []
+    },
+    {
+      "name": "Start Standard Session",
+      "short_name": "Standard",
+      "description": "Start a 25-minute standard session",
+      "url": "/session?type=standard",
+      "icons": []
+    },
+    {
+      "name": "View Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your progress and stats",
+      "url": "/dashboard",
+      "icons": []
+    }
+  ]
+}
