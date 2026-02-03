@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   keywords: ['pomodoro', 'timer', 'study', 'gamification', 'productivity', 'poker'],
   manifest: '/manifest.json',
   icons: [
-    { rel: 'apple-touch-icon', url: '/icon-192.png' },
-    { rel: 'icon', url: '/icon-192.png' },
+    { rel: 'apple-touch-icon', url: '/icon-192.png', sizes: '192x192' },
+    { rel: 'icon', url: '/icon-192.png', sizes: '192x192' },
   ],
   appleWebApp: {
     capable: true,
@@ -34,11 +34,12 @@ export const metadata: Metadata = {
     initialScale: 1,
     maximumScale: 1,
     userScalable: false,
+    viewportFit: 'cover',
   },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#8b5cf6' },
-    { media: '(prefers-color-scheme: dark)', color: '#8b5cf6' },
-  ],
+  themeColor: '#8b5cf6',
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export default function RootLayout({
