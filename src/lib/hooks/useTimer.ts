@@ -153,10 +153,19 @@ export function useTimer(options: UseTimerOptions = {}) {
     `;
 
     const blob = new Blob([workerCode], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
+    let worker: Worker;
+    
+    try {
+      worker = new Worker(URL.createObjectURL(blob));
+      console.log('Timer worker created successfully');
+    } catch (error) {
+      console.error('Failed to create timer worker:', error);
+      return;
+    }
 
     worker.onmessage = (event) => {
       const { type, remainingSeconds } = event.data;
+      console.log('Timer worker message:', { type, remainingSeconds });
 
       switch (type) {
         case 'TICK':
@@ -204,6 +213,14 @@ export function useTimer(options: UseTimerOptions = {}) {
       }
     };
 
+    worker.onerror = (error) => {
+      console.error('Timer worker error:', error);
+    };
+
+    worker.onmessageerror = (error) => {
+      console.error('Timer worker message error:', error);
+    };
+
     workerRef.current = worker;
 
     return () => {
@@ -212,6 +229,7 @@ export function useTimer(options: UseTimerOptions = {}) {
   }, []);
 
   const start = useCallback((durationSeconds: number) => {
+    console.log('Starting timer with duration:', durationSeconds);
     totalSecondsRef.current = durationSeconds;
     // Set initial state to show we're starting but let worker control the countdown
     setState({
@@ -223,7 +241,12 @@ export function useTimer(options: UseTimerOptions = {}) {
     
     // Start the worker after a brief delay to avoid race conditions
     setTimeout(() => {
-      workerRef.current?.postMessage({ type: 'START', durationSeconds });
+      if (workerRef.current) {
+        console.log('Sending START message to worker');
+        workerRef.current.postMessage({ type: 'START', durationSeconds });
+      } else {
+        console.error('Worker not available when trying to start timer');
+      }
     }, 10);
   }, []);
 
