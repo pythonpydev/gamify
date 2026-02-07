@@ -64,7 +64,7 @@ export function useTimer(options: UseTimerOptions = {}) {
 
       function tick() {
         const remainingMs = calculateRemainingMs();
-        const remainingSeconds = Math.ceil(remainingMs / 1000);
+        const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
 
         self.postMessage({
           type: 'TICK',
@@ -86,8 +86,12 @@ export function useTimer(options: UseTimerOptions = {}) {
           durationMs: durationSeconds * 1000,
           pausedTime: 0,
         };
+        
+        // Call tick immediately to give instant feedback
         tick();
-        intervalId = setInterval(tick, 100);
+        
+        // Use 1000ms interval for smoother visual updates
+        intervalId = setInterval(tick, 1000);
       }
 
       function resume() {
@@ -97,7 +101,7 @@ export function useTimer(options: UseTimerOptions = {}) {
           state.isRunning = true;
           state.pausedTime = 0;
           tick();
-          intervalId = setInterval(tick, 100);
+          intervalId = setInterval(tick, 1000);
         }
       }
 
@@ -209,13 +213,18 @@ export function useTimer(options: UseTimerOptions = {}) {
 
   const start = useCallback((durationSeconds: number) => {
     totalSecondsRef.current = durationSeconds;
+    // Set initial state to show we're starting but let worker control the countdown
     setState({
       status: 'RUNNING',
       remainingSeconds: durationSeconds,
       totalSeconds: durationSeconds,
       elapsedSeconds: 0,
     });
-    workerRef.current?.postMessage({ type: 'START', durationSeconds });
+    
+    // Start the worker after a brief delay to avoid race conditions
+    setTimeout(() => {
+      workerRef.current?.postMessage({ type: 'START', durationSeconds });
+    }, 10);
   }, []);
 
   const pause = useCallback(() => {
