@@ -90,8 +90,8 @@ export function useTimer(options: UseTimerOptions = {}) {
         // Call tick immediately to give instant feedback
         tick();
         
-        // Use 1000ms interval for smoother visual updates
-        intervalId = setInterval(tick, 1000);
+        // Use 500ms interval for responsive visual updates
+        intervalId = setInterval(tick, 500);
       }
 
       function resume() {
@@ -101,7 +101,7 @@ export function useTimer(options: UseTimerOptions = {}) {
           state.isRunning = true;
           state.pausedTime = 0;
           tick();
-          intervalId = setInterval(tick, 1000);
+          intervalId = setInterval(tick, 500);
         }
       }
 
@@ -153,28 +153,25 @@ export function useTimer(options: UseTimerOptions = {}) {
     `;
 
     const blob = new Blob([workerCode], { type: 'application/javascript' });
-    let worker: Worker;
-    
-    try {
-      worker = new Worker(URL.createObjectURL(blob));
-      console.log('Timer worker created successfully');
-    } catch (error) {
-      console.error('Failed to create timer worker:', error);
-      return;
-    }
+    const worker = new Worker(URL.createObjectURL(blob));
 
     worker.onmessage = (event) => {
       const { type, remainingSeconds } = event.data;
-      console.log('Timer worker message:', { type, remainingSeconds });
 
       switch (type) {
         case 'TICK':
-          setState((prev) => ({
-            ...prev,
-            status: 'RUNNING',
-            remainingSeconds,
-            elapsedSeconds: totalSecondsRef.current - remainingSeconds,
-          }));
+          setState((prev) => {
+            // Only update if the values have actually changed
+            if (prev.remainingSeconds !== remainingSeconds) {
+              return {
+                ...prev,
+                status: 'RUNNING',
+                remainingSeconds,
+                elapsedSeconds: totalSecondsRef.current - remainingSeconds,
+              };
+            }
+            return prev;
+          });
           onTickRef.current?.(remainingSeconds);
           break;
         case 'COMPLETE':
@@ -213,14 +210,6 @@ export function useTimer(options: UseTimerOptions = {}) {
       }
     };
 
-    worker.onerror = (error) => {
-      console.error('Timer worker error:', error);
-    };
-
-    worker.onmessageerror = (error) => {
-      console.error('Timer worker message error:', error);
-    };
-
     workerRef.current = worker;
 
     return () => {
@@ -229,9 +218,7 @@ export function useTimer(options: UseTimerOptions = {}) {
   }, []);
 
   const start = useCallback((durationSeconds: number) => {
-    console.log('Starting timer with duration:', durationSeconds);
     totalSecondsRef.current = durationSeconds;
-    // Set initial state to show we're starting but let worker control the countdown
     setState({
       status: 'RUNNING',
       remainingSeconds: durationSeconds,
@@ -239,15 +226,8 @@ export function useTimer(options: UseTimerOptions = {}) {
       elapsedSeconds: 0,
     });
     
-    // Start the worker after a brief delay to avoid race conditions
-    setTimeout(() => {
-      if (workerRef.current) {
-        console.log('Sending START message to worker');
-        workerRef.current.postMessage({ type: 'START', durationSeconds });
-      } else {
-        console.error('Worker not available when trying to start timer');
-      }
-    }, 10);
+    // Send message immediately - React 18 batches state updates properly
+    workerRef.current?.postMessage({ type: 'START', durationSeconds });
   }, []);
 
   const pause = useCallback(() => {
