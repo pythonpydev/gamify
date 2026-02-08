@@ -77,7 +77,10 @@ export default function SessionPage() {
 
             // Reset timer first to clear break state, then start new work session
             timer.reset();
-            timer.start(durationSeconds);
+            // Use setTimeout to ensure reset completes before starting
+            setTimeout(() => {
+              timer.start(durationSeconds);
+            }, 100);
           } else {
             console.error('Failed to create new session after break');
             // If we can't create a new session, reset to idle state
