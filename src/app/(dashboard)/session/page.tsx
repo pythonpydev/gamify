@@ -135,7 +135,7 @@ export default function SessionPage() {
         setShowCompletionModal(true);
       }
     }
-  }, []);
+  }, [activeSession]);
 
   const handleStartSession = async () => {
     if (!selectedCategory || !selectedType) return;
