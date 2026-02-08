@@ -12,6 +12,7 @@ interface SessionTypeSelectorProps {
 }
 
 const sessionTypeInfo: Record<SessionTypeName, { emoji: string; description: string }> = {
+  TEST_HAND: { emoji: '🧪', description: 'Testing features' },
   QUICK_HAND: { emoji: '⚡', description: 'Quick focus burst' },
   STANDARD: { emoji: '🃏', description: 'Classic Pomodoro' },
   DEEP_STACK: { emoji: '🎰', description: 'Deep work session' },

@@ -38,6 +38,7 @@ export interface SessionWithCategory {
 
 // Session type configuration
 export const SESSION_TYPES = {
+  TEST_HAND: { duration: 1, label: 'Test Hand (1 min)', breakDuration: 1 },
   QUICK_HAND: { duration: 15, label: 'Quick Hand', breakDuration: 5 },
   STANDARD: { duration: 25, label: 'Standard Hand', breakDuration: 5 },
   DEEP_STACK: { duration: 50, label: 'Deep Stack', breakDuration: 10 },
