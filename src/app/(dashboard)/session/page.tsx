@@ -39,60 +39,10 @@ export default function SessionPage() {
     }
   }, [selectedType]);
 
-  const handleBreakComplete = useCallback(async () => {
-    // Break completed - automatically start a new work session
-    if (selectedCategory && selectedType) {
-      const category = categories.find((c) => c.id === selectedCategory);
-      if (category) {
-        const sessionConfig = SESSION_TYPES[selectedType];
-        const durationSeconds = sessionConfig.duration * 60;
-        const durationMins = sessionConfig.duration;
-
-        try {
-          // Create new session via API
-          const res = await fetch('/api/sessions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              categoryId: selectedCategory,
-              sessionType: selectedType,
-            }),
-          });
-
-          if (res.ok) {
-            const session = await res.json();
-
-            // Start the new session in store
-            startSession({
-              id: session.id,
-              categoryId: selectedCategory,
-              categoryName: category.name,
-              categoryColor: category.color,
-              sessionType: selectedType,
-              durationMins,
-              startTime: new Date().toISOString(),
-              status: 'ACTIVE',
-            });
-
-            // Reset timer first to clear break state, then start new work session
-            timer.reset();
-            // Use setTimeout to ensure reset completes before starting
-            setTimeout(() => {
-              timer.start(durationSeconds);
-            }, 100);
-          } else {
-            console.error('Failed to create new session after break');
-            // If we can't create a new session, reset to idle state
-            timer.reset();
-          }
-        } catch (error) {
-          console.error('Error creating new session after break:', error);
-          timer.reset();
-        }
-      }
-    }
-  }, [selectedCategory, selectedType, categories, startSession]);
+  const handleBreakComplete = useCallback(() => {
+    // Break completed - ask user if they want to continue or finish
+    setShowCompletionModal(true);
+  }, []);
 
   const timer = useTimer({
     onComplete: handleTimerComplete,
@@ -135,7 +85,7 @@ export default function SessionPage() {
         setShowCompletionModal(true);
       }
     }
-  }, [activeSession]);
+  }, []);
 
   const handleStartSession = async () => {
     if (!selectedCategory || !selectedType) return;
@@ -334,6 +284,16 @@ export default function SessionPage() {
                     </Button>
                   </>
                 )}
+                {timer.isOnBreak && (
+                  <>
+                    <Button variant="secondary" onClick={handleEndSession}>
+                      Skip Break
+                    </Button>
+                    <Button variant="danger" onClick={handleAbandonSession}>
+                      End Session
+                    </Button>
+                  </>
+                )}
               </>
             )}
 
@@ -352,6 +312,16 @@ export default function SessionPage() {
                     </Button>
                   </>
                 )}
+                {timer.isOnBreak && (
+                  <>
+                    <Button variant="secondary" onClick={handleEndSession}>
+                      Skip Break
+                    </Button>
+                    <Button variant="danger" onClick={handleAbandonSession}>
+                      End Session
+                    </Button>
+                  </>
+                )}
               </>
             )}
 
@@ -366,13 +336,22 @@ export default function SessionPage() {
             )}
 
             {timer.isBreakCompleted && (
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleStartSession}
-              >
-                Start New Session
-              </Button>
+              <>
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={handleStartSession}
+                >
+                  Continue Studying
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={handleEndSession}
+                >
+                  Finish & Rate Session
+                </Button>
+              </>
             )}
           </div>
         </Card>
