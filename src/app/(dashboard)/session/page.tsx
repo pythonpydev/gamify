@@ -31,21 +31,18 @@ export default function SessionPage() {
   const { activeSession, startSession, completeSession, clearSession } = useSessionStore();
 
   const handleTimerComplete = useCallback(() => {
-    if (timer.isWorkSession && selectedType) {
+    if (selectedType) {
       // Work session completed - offer break
       const breakDuration = SESSION_TYPES[selectedType].breakDuration;
       setPendingBreakDuration(breakDuration);
       setShowBreakOfferModal(true);
-    } else {
-      // Break completed - show completion modal
-      setShowCompletionModal(true);
     }
-  }, [timer.isWorkSession, selectedType]);
+  }, [selectedType]);
 
   const handleBreakComplete = useCallback(() => {
-    // Break is over, reset timer for new session
-    timer.reset();
-  }, [timer]);
+    // Break completed - show completion modal
+    setShowCompletionModal(true);
+  }, []);
 
   const timer = useTimer({
     onComplete: handleTimerComplete,
