@@ -39,10 +39,56 @@ export default function SessionPage() {
     }
   }, [selectedType]);
 
-  const handleBreakComplete = useCallback(() => {
-    // Break completed - show completion modal
-    setShowCompletionModal(true);
-  }, []);
+  const handleBreakComplete = useCallback(async () => {
+    // Break completed - automatically start a new work session
+    if (selectedCategory && selectedType) {
+      const category = categories.find((c) => c.id === selectedCategory);
+      if (category) {
+        const sessionConfig = SESSION_TYPES[selectedType];
+        const durationSeconds = sessionConfig.duration * 60;
+        const durationMins = sessionConfig.duration;
+
+        try {
+          // Create new session via API
+          const res = await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              categoryId: selectedCategory,
+              sessionType: selectedType,
+            }),
+          });
+
+          if (res.ok) {
+            const session = await res.json();
+
+            // Start the new session in store
+            startSession({
+              id: session.id,
+              categoryId: selectedCategory,
+              categoryName: category.name,
+              categoryColor: category.color,
+              sessionType: selectedType,
+              durationMins,
+              startTime: new Date().toISOString(),
+              status: 'ACTIVE',
+            });
+
+            // Start the timer for the new work session
+            timer.start(durationSeconds);
+          } else {
+            console.error('Failed to create new session after break');
+            // If we can't create a new session, reset to idle state
+            timer.reset();
+          }
+        } catch (error) {
+          console.error('Error creating new session after break:', error);
+          timer.reset();
+        }
+      }
+    }
+  }, [selectedCategory, selectedType, categories, startSession]);
 
   const timer = useTimer({
     onComplete: handleTimerComplete,
@@ -196,6 +242,11 @@ export default function SessionPage() {
     setShowCompletionModal(true);
   };
 
+  const handleEndSession = () => {
+    // User wants to end their pomodoro cycle
+    setShowCompletionModal(true);
+  };
+
   const handleAbandonSession = async () => {
     if (!confirm('Are you sure you want to abandon this session? You won\'t earn any chips.')) {
       return;
@@ -270,9 +321,14 @@ export default function SessionPage() {
                   Pause
                 </Button>
                 {timer.isWorkSession && (
-                  <Button variant="danger" onClick={handleAbandonSession}>
-                    Abandon
-                  </Button>
+                  <>
+                    <Button variant="secondary" onClick={handleEndSession}>
+                      End Session
+                    </Button>
+                    <Button variant="danger" onClick={handleAbandonSession}>
+                      Abandon
+                    </Button>
+                  </>
                 )}
               </>
             )}
@@ -283,9 +339,14 @@ export default function SessionPage() {
                   Resume
                 </Button>
                 {timer.isWorkSession && (
-                  <Button variant="danger" onClick={handleAbandonSession}>
-                    Abandon
-                  </Button>
+                  <>
+                    <Button variant="secondary" onClick={handleEndSession}>
+                      End Session
+                    </Button>
+                    <Button variant="danger" onClick={handleAbandonSession}>
+                      Abandon
+                    </Button>
+                  </>
                 )}
               </>
             )}
@@ -304,7 +365,7 @@ export default function SessionPage() {
               <Button
                 variant="primary"
                 size="lg"
-                onClick={() => timer.reset()}
+                onClick={handleStartSession}
               >
                 Start New Session
               </Button>
