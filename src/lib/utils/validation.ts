@@ -58,7 +58,7 @@ export function validateColor(color: string): { valid: boolean; error?: string }
 
 // Validate session type
 export function validateSessionType(type: string): { valid: boolean; error?: string } {
-  const validTypes = ['QUICK_HAND', 'STANDARD', 'DEEP_STACK'];
+  const validTypes = ['TEST_HAND', 'QUICK_HAND', 'STANDARD', 'DEEP_STACK'];
   
   if (!validTypes.includes(type)) {
     return { valid: false, error: 'Invalid session type' };
