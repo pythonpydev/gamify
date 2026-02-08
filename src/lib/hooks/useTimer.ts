@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-export type TimerStatus = 'IDLE' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
+export type TimerStatus = 'IDLE' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'BREAK_RUNNING' | 'BREAK_PAUSED' | 'BREAK_COMPLETED';
+export type TimerMode = 'WORK' | 'BREAK';
 
 export interface TimerState {
   status: TimerStatus;
+  mode: TimerMode;
   remainingSeconds: number;
   totalSeconds: number;
   elapsedSeconds: number;
@@ -13,15 +15,17 @@ export interface TimerState {
 
 export interface UseTimerOptions {
   onComplete?: () => void;
+  onBreakComplete?: () => void;
   onTick?: (remainingSeconds: number) => void;
   playAlarmOnComplete?: boolean;
 }
 
 export function useTimer(options: UseTimerOptions = {}) {
-  const { onComplete, onTick, playAlarmOnComplete = false } = options;
+  const { onComplete, onBreakComplete, onTick, playAlarmOnComplete = false } = options;
 
   const [state, setState] = useState<TimerState>({
     status: 'IDLE',
+    mode: 'WORK',
     remainingSeconds: 0,
     totalSeconds: 0,
     elapsedSeconds: 0,
@@ -30,15 +34,17 @@ export function useTimer(options: UseTimerOptions = {}) {
   const workerRef = useRef<Worker | null>(null);
   const totalSecondsRef = useRef<number>(0);
   const onCompleteRef = useRef(onComplete);
+  const onBreakCompleteRef = useRef(onBreakComplete);
   const onTickRef = useRef(onTick);
   const playAlarmRef = useRef(playAlarmOnComplete);
 
   // Keep callback refs up to date
   useEffect(() => {
     onCompleteRef.current = onComplete;
+    onBreakCompleteRef.current = onBreakComplete;
     onTickRef.current = onTick;
     playAlarmRef.current = playAlarmOnComplete;
-  }, [onComplete, onTick, playAlarmOnComplete]);
+  }, [onComplete, onBreakComplete, onTick, playAlarmOnComplete]);
 
   // Initialize worker
   useEffect(() => {
@@ -163,9 +169,10 @@ export function useTimer(options: UseTimerOptions = {}) {
           setState((prev) => {
             // Only update if the values have actually changed
             if (prev.remainingSeconds !== remainingSeconds) {
+              const isBreak = prev.mode === 'BREAK';
               return {
                 ...prev,
-                status: 'RUNNING',
+                status: isBreak ? 'BREAK_RUNNING' : 'RUNNING',
                 remainingSeconds,
                 elapsedSeconds: totalSecondsRef.current - remainingSeconds,
               };
@@ -175,12 +182,15 @@ export function useTimer(options: UseTimerOptions = {}) {
           onTickRef.current?.(remainingSeconds);
           break;
         case 'COMPLETE':
-          setState((prev) => ({
-            ...prev,
-            status: 'COMPLETED',
-            remainingSeconds: 0,
-            elapsedSeconds: totalSecondsRef.current,
-          }));
+          setState((prev) => {
+            const isBreak = prev.mode === 'BREAK';
+            return {
+              ...prev,
+              status: isBreak ? 'BREAK_COMPLETED' : 'COMPLETED',
+              remainingSeconds: 0,
+              elapsedSeconds: totalSecondsRef.current,
+            };
+          });
           
           // Play alarm if enabled
           if (playAlarmRef.current) {
@@ -190,18 +200,30 @@ export function useTimer(options: UseTimerOptions = {}) {
             });
           }
           
-          onCompleteRef.current?.();
+          // Call appropriate completion handler
+          setState((prev) => {
+            if (prev.mode === 'BREAK') {
+              onBreakCompleteRef.current?.();
+            } else {
+              onCompleteRef.current?.();
+            }
+            return prev;
+          });
           break;
         case 'PAUSED':
-          setState((prev) => ({
-            ...prev,
-            status: 'PAUSED',
-            remainingSeconds,
-          }));
+          setState((prev) => {
+            const isBreak = prev.mode === 'BREAK';
+            return {
+              ...prev,
+              status: isBreak ? 'BREAK_PAUSED' : 'PAUSED',
+              remainingSeconds,
+            };
+          });
           break;
         case 'STOPPED':
           setState({
             status: 'IDLE',
+            mode: 'WORK',
             remainingSeconds: 0,
             totalSeconds: 0,
             elapsedSeconds: 0,
@@ -217,10 +239,11 @@ export function useTimer(options: UseTimerOptions = {}) {
     };
   }, []);
 
-  const start = useCallback((durationSeconds: number) => {
+  const start = useCallback((durationSeconds: number, mode: TimerMode = 'WORK') => {
     totalSecondsRef.current = durationSeconds;
     setState({
-      status: 'RUNNING',
+      status: mode === 'BREAK' ? 'BREAK_RUNNING' : 'RUNNING',
+      mode,
       remainingSeconds: durationSeconds,
       totalSeconds: durationSeconds,
       elapsedSeconds: 0,
@@ -246,15 +269,21 @@ export function useTimer(options: UseTimerOptions = {}) {
     stop();
     setState({
       status: 'IDLE',
+      mode: 'WORK',
       remainingSeconds: 0,
       totalSeconds: 0,
       elapsedSeconds: 0,
     });
   }, [stop]);
 
+  const startBreak = useCallback((durationSeconds: number) => {
+    start(durationSeconds, 'BREAK');
+  }, [start]);
+
   return {
     ...state,
     start,
+    startBreak,
     pause,
     resume,
     stop,
@@ -263,5 +292,10 @@ export function useTimer(options: UseTimerOptions = {}) {
     isRunning: state.status === 'RUNNING',
     isPaused: state.status === 'PAUSED',
     isCompleted: state.status === 'COMPLETED',
+    isBreakRunning: state.status === 'BREAK_RUNNING',
+    isBreakPaused: state.status === 'BREAK_PAUSED',
+    isBreakCompleted: state.status === 'BREAK_COMPLETED',
+    isOnBreak: state.mode === 'BREAK',
+    isWorkSession: state.mode === 'WORK',
   };
 }

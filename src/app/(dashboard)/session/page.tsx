@@ -9,6 +9,7 @@ import {
   SessionTypeSelector,
   CategorySelector,
   SessionCompletionModal,
+  BreakOfferModal,
   type Category,
 } from '@/components/timer';
 import { useTimer } from '@/lib/hooks/useTimer';
@@ -22,17 +23,33 @@ export default function SessionPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<SessionTypeName | null>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [showBreakOfferModal, setShowBreakOfferModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alarmEnabled, setAlarmEnabled] = useState(true);
+  const [pendingBreakDuration, setPendingBreakDuration] = useState<number | null>(null);
 
   const { activeSession, startSession, completeSession, clearSession } = useSessionStore();
 
   const handleTimerComplete = useCallback(() => {
-    setShowCompletionModal(true);
-  }, []);
+    if (timer.isWorkSession && selectedType) {
+      // Work session completed - offer break
+      const breakDuration = SESSION_TYPES[selectedType].breakDuration;
+      setPendingBreakDuration(breakDuration);
+      setShowBreakOfferModal(true);
+    } else {
+      // Break completed - show completion modal
+      setShowCompletionModal(true);
+    }
+  }, [timer.isWorkSession, selectedType]);
+
+  const handleBreakComplete = useCallback(() => {
+    // Break is over, reset timer for new session
+    timer.reset();
+  }, [timer]);
 
   const timer = useTimer({
     onComplete: handleTimerComplete,
+    onBreakComplete: handleBreakComplete,
     playAlarmOnComplete: alarmEnabled,
   });
 
@@ -170,6 +187,18 @@ export default function SessionPage() {
     }
   };
 
+  const handleTakeBreak = () => {
+    if (pendingBreakDuration) {
+      setShowBreakOfferModal(false);
+      timer.startBreak(pendingBreakDuration * 60); // Convert minutes to seconds
+    }
+  };
+
+  const handleSkipBreak = () => {
+    setShowBreakOfferModal(false);
+    setShowCompletionModal(true);
+  };
+
   const handleAbandonSession = async () => {
     if (!confirm('Are you sure you want to abandon this session? You won\'t earn any chips.')) {
       return;
@@ -195,8 +224,8 @@ export default function SessionPage() {
     timer.reset();
   };
 
-  const isSessionActive = timer.isRunning || timer.isPaused;
-  const canStartSession = selectedCategory && selectedType && !isSessionActive;
+  const isSessionActive = timer.isRunning || timer.isPaused || timer.isBreakRunning || timer.isBreakPaused;
+  const canStartSession = selectedCategory && selectedType && timer.isIdle;
 
   const selectedCategoryObj = categories.find((c) => c.id === selectedCategory);
 
@@ -221,6 +250,7 @@ export default function SessionPage() {
             remainingSeconds={timer.remainingSeconds}
             totalSeconds={timer.totalSeconds}
             status={timer.status}
+            mode={timer.mode}
             className="mb-6"
           />
 
@@ -237,25 +267,29 @@ export default function SessionPage() {
               </Button>
             )}
 
-            {timer.isRunning && (
+            {(timer.isRunning || timer.isBreakRunning) && (
               <>
                 <Button variant="outline" onClick={timer.pause}>
                   Pause
                 </Button>
-                <Button variant="danger" onClick={handleAbandonSession}>
-                  Abandon
-                </Button>
+                {timer.isWorkSession && (
+                  <Button variant="danger" onClick={handleAbandonSession}>
+                    Abandon
+                  </Button>
+                )}
               </>
             )}
 
-            {timer.isPaused && (
+            {(timer.isPaused || timer.isBreakPaused) && (
               <>
                 <Button variant="primary" onClick={timer.resume}>
                   Resume
                 </Button>
-                <Button variant="danger" onClick={handleAbandonSession}>
-                  Abandon
-                </Button>
+                {timer.isWorkSession && (
+                  <Button variant="danger" onClick={handleAbandonSession}>
+                    Abandon
+                  </Button>
+                )}
               </>
             )}
 
@@ -266,6 +300,16 @@ export default function SessionPage() {
                 onClick={() => setShowCompletionModal(true)}
               >
                 Rate & Claim Chips
+              </Button>
+            )}
+
+            {timer.isBreakCompleted && (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={() => timer.reset()}
+              >
+                Start New Session
               </Button>
             )}
           </div>
@@ -367,6 +411,18 @@ export default function SessionPage() {
         onComplete={handleCompleteSession}
         onClose={() => setShowCompletionModal(false)}
         isLoading={isSubmitting}
+      />
+
+      {/* Break Offer Modal */}
+      <BreakOfferModal
+        isOpen={showBreakOfferModal}
+        sessionType={selectedType ? SESSION_TYPES[selectedType].label : ''}
+        categoryName={selectedCategoryObj?.name || ''}
+        durationMins={selectedType ? SESSION_TYPES[selectedType].duration : 0}
+        breakDurationMins={pendingBreakDuration || 0}
+        onTakeBreak={handleTakeBreak}
+        onSkipBreak={handleSkipBreak}
+        onClose={() => setShowBreakOfferModal(false)}
       />
     </div>
   );

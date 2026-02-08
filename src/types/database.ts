@@ -38,9 +38,9 @@ export interface SessionWithCategory {
 
 // Session type configuration
 export const SESSION_TYPES = {
-  QUICK_HAND: { duration: 15, label: 'Quick Hand' },
-  STANDARD: { duration: 25, label: 'Standard Hand' },
-  DEEP_STACK: { duration: 50, label: 'Deep Stack' },
+  QUICK_HAND: { duration: 15, label: 'Quick Hand', breakDuration: 5 },
+  STANDARD: { duration: 25, label: 'Standard Hand', breakDuration: 5 },
+  DEEP_STACK: { duration: 50, label: 'Deep Stack', breakDuration: 10 },
 } as const;
 
 export type SessionTypeName = keyof typeof SESSION_TYPES;
