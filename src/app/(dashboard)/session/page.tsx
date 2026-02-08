@@ -75,7 +75,8 @@ export default function SessionPage() {
               status: 'ACTIVE',
             });
 
-            // Start the timer for the new work session
+            // Reset timer first to clear break state, then start new work session
+            timer.reset();
             timer.start(durationSeconds);
           } else {
             console.error('Failed to create new session after break');
